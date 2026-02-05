@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 // 定义数据类型
 interface Skill {
@@ -49,16 +48,10 @@ const defaultData: WebsiteData = {
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AI%20chatbot%20interface%20with%20futuristic%20design%2C%20dark%20theme%2C%20blue%20accent%20colors&image_size=square_hd"
     },
     {
-      title: "图像识别系统",
-      description: "使用深度学习技术实现的图像识别系统，准确率达到98%以上。",
-      tech: ["Python", "TensorFlow", "CNN"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Image%20recognition%20system%20dashboard%2C%20futuristic%20design%2C%20dark%20theme%2C%20green%20accent%20colors&image_size=square_hd"
-    },
-    {
-      title: "智能推荐系统",
-      description: "基于协同过滤和内容过滤的混合推荐系统，提高用户体验。",
-      tech: ["Python", "Scikit-learn", "FastAPI"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Smart%20recommendation%20system%20interface%2C%20futuristic%20design%2C%20dark%20theme%2C%20purple%20accent%20colors&image_size=square_hd"
+      title: "图像生成应用",
+      description: "使用Stable Diffusion API开发的图像生成应用，支持多种风格和参数调整。",
+      tech: ["Next.js", "Stable Diffusion API", "Tailwind CSS"],
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Image%20generation%20application%20with%20futuristic%20UI%2C%20dark%20theme%2C%20purple%20accent%20colors&image_size=square_hd"
     },
     {
       title: "语音助手应用",
@@ -74,71 +67,92 @@ const defaultData: WebsiteData = {
     }
   ],
   aiTools: [
-    { category: "Prompt Engineering", items: ["System Prompts", "Few-shot Learning", "Chain-of-Thought"] },
-    { category: "Development", items: ["Cursor", "Claude 3.5 Sonnet", "LangChain"] },
-    { category: "Efficiency", items: ["AI Automation", "Code Generation", "Documentation"] }
+    {
+      category: "AI语言模型",
+      items: ["GPT-4o", "Claude 3.5", "Gemini Advanced", "Anthropic Claude 3"]
+    },
+    {
+      category: "AI代码助手",
+      items: ["GitHub Copilot", "Cursor", "Codeium", "Sourcegraph Cody"]
+    },
+    {
+      category: "AI图像生成",
+      items: ["Midjourney", "DALL-E 3", "Stable Diffusion", "Leonardo AI"]
+    },
+    {
+      category: "AI视频生成",
+      items: ["Runway Gen-2", "Pika Labs", "Synthesia", "Hour One"]
+    }
   ]
 };
 
-// 从localStorage加载数据
-const loadData = (): WebsiteData => {
-  try {
-    // 仅在客户端使用localStorage
-    if (typeof window !== 'undefined') {
-      const savedData = localStorage.getItem('websiteData');
-      return savedData ? JSON.parse(savedData) : defaultData;
-    }
-    return defaultData;
-  } catch (error) {
-    console.error('加载数据失败:', error);
-    return defaultData;
-  }
-};
-
-// 保存数据到localStorage
-const saveData = (data: WebsiteData) => {
-  try {
-    // 仅在客户端使用localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('websiteData', JSON.stringify(data));
-    }
-  } catch (error) {
-    console.error('保存数据失败:', error);
-  }
-};
-
-export default function AdminPage() {
-  // 加载数据
-  const [data, setData] = useState<WebsiteData>(loadData());
+const AdminPage: React.FC = () => {
+  const [data, setData] = useState<WebsiteData>(defaultData);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 保存数据
-  const handleSave = () => {
+  // 从localStorage加载数据
+  useEffect(() => {
+    const savedData = localStorage.getItem('websiteData');
+    if (savedData) {
+      try {
+        setData(JSON.parse(savedData));
+      } catch (error) {
+        console.error('Failed to parse saved data:', error);
+      }
+    }
+  }, []);
+
+  // 保存数据到localStorage
+  useEffect(() => {
+    localStorage.setItem('websiteData', JSON.stringify(data));
+  }, [data]);
+
+  // 保存更改
+  const handleSave = async () => {
     setIsSaving(true);
-    saveData(data);
-    setTimeout(() => {
+    try {
+      // 这里可以添加API调用保存到服务器
+      console.log('Data saved successfully:', data);
+      alert('保存成功！');
+    } catch (error) {
+      console.error('Failed to save data:', error);
+      alert('保存失败，请重试！');
+    } finally {
       setIsSaving(false);
-    }, 1000);
+    }
   };
 
-  // 重置数据
+  // 重置为默认值
   const handleReset = () => {
-    setData(defaultData);
-    saveData(defaultData);
+    if (window.confirm('确定要重置为默认值吗？所有更改将丢失。')) {
+      setData(defaultData);
+    }
   };
 
   // 关于我编辑
-  const handleAboutMeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setData(prev => ({ ...prev, aboutMe: e.target.value }));
+  const handleAboutMeChange = (value: string) => {
+    setData(prev => ({ ...prev, aboutMe: value }));
+  };
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setData(prev => ({ ...prev, profilePhoto: result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // 技能编辑
-  const handleSkillChange = (index: number, field: keyof Skill, value: string) => {
+  const handleSkillChange = (index: number, field: keyof Skill, value: string | number) => {
     const updatedSkills = [...data.skills];
     if (field === 'percentage') {
-      updatedSkills[index][field] = parseInt(value) || 0;
+      updatedSkills[index][field] = Number(value);
     } else {
-      updatedSkills[index][field] = value;
+      updatedSkills[index][field] = value as string;
     }
     setData(prev => ({ ...prev, skills: updatedSkills }));
   };
@@ -146,7 +160,7 @@ export default function AdminPage() {
   const handleAddSkill = () => {
     setData(prev => ({ 
       ...prev, 
-      skills: [...prev.skills, { name: "新技能", percentage: 0 }] 
+      skills: [...prev.skills, { name: '新技能', percentage: 0 }] 
     }));
   };
 
@@ -156,7 +170,7 @@ export default function AdminPage() {
   };
 
   // 项目编辑
-  const handleProjectChange = (index: number, field: keyof Project, value: string) => {
+  const handleProjectChange = (index: number, field: keyof Omit<Project, 'tech'>, value: string) => {
     const updatedProjects = [...data.projects];
     updatedProjects[index][field] = value;
     setData(prev => ({ ...prev, projects: updatedProjects }));
@@ -170,7 +184,7 @@ export default function AdminPage() {
 
   const handleAddProjectTech = (projectIndex: number) => {
     const updatedProjects = [...data.projects];
-    updatedProjects[projectIndex].tech.push("新技术");
+    updatedProjects[projectIndex].tech.push('新技术');
     setData(prev => ({ ...prev, projects: updatedProjects }));
   };
 
@@ -186,10 +200,10 @@ export default function AdminPage() {
       projects: [
         ...prev.projects, 
         {
-          title: "新项目",
-          description: "项目描述...",
-          tech: ["技术1", "技术2"],
-          image: "https://via.placeholder.com/800x450"
+          title: '新项目',
+          description: '项目描述...',
+          tech: ['技术1', '技术2'],
+          image: 'https://via.placeholder.com/800x450'
         }
       ] 
     }));
@@ -215,7 +229,7 @@ export default function AdminPage() {
 
   const handleAddAIToolItem = (categoryIndex: number) => {
     const updatedTools = [...data.aiTools];
-    updatedTools[categoryIndex].items.push("新工具");
+    updatedTools[categoryIndex].items.push('新工具');
     setData(prev => ({ ...prev, aiTools: updatedTools }));
   };
 
@@ -230,7 +244,7 @@ export default function AdminPage() {
       ...prev, 
       aiTools: [
         ...prev.aiTools, 
-        { category: "新分类", items: ["新工具"] }
+        { category: '新分类', items: ['新工具'] }
       ] 
     }));
   };
@@ -244,46 +258,33 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8">
       <div className="container mx-auto max-w-5xl">
         {/* 页面标题 */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-8 text-primary flex items-center">
             <span className="text-4xl mr-2">⚙️</span>
             网站后台管理
           </h1>
           <p className="text-muted mb-6">在这里编辑您的网站内容，更改会实时保存并显示在前端页面上。</p>
-        </motion.div>
+        </div>
 
         {/* 操作按钮 */}
         <div className="flex flex-wrap gap-4 mb-8">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className={`px-6 py-2 rounded-full font-medium ${isSaving ? 'bg-gray-600' : 'bg-primary text-white hover:bg-primary/80'}`}
           >
             {isSaving ? '💾 保存中...' : '💾 保存更改'}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          </button>
+          <button
             onClick={handleReset}
             className="px-6 py-2 rounded-full font-medium bg-secondary text-white hover:bg-secondary/80"
           >
             🔄 重置为默认值
-          </motion.button>
+          </button>
         </div>
 
         {/* 关于我编辑 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-bold mb-4 text-secondary">关于我</h2>
           
           {/* 照片上传部分 */}
@@ -301,58 +302,36 @@ export default function AdminPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        const result = event.target?.result as string;
-                        const updatedData = { ...data, profilePhoto: result };
-                        setData(updatedData);
-                        saveData(updatedData);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="hidden"
-                  id="profilePhotoInput"
+                  onChange={handleProfilePhotoChange}
+                  className="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg cursor-pointer"
                 />
-                <label 
-                  htmlFor="profilePhotoInput"
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 cursor-pointer inline-block"
-                >
-                  📸 上传新照片
-                </label>
-                <p className="text-xs text-muted mt-1">支持JPG、PNG、WebP格式</p>
+                <p className="text-xs text-muted mt-1">支持JPG、PNG等图片格式</p>
               </div>
             </div>
           </div>
-          
-          <textarea
-            value={data.aboutMe}
-            onChange={handleAboutMeChange}
-            className="w-full bg-gray-700 border border-primary/50 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
-            placeholder="编辑您的个人简介..."
-          />
-        </motion.div>
+
+          {/* 关于我文本编辑 */}
+          <div>
+            <h3 className="text-lg font-medium mb-2">个人介绍</h3>
+            <textarea
+              value={data.aboutMe}
+              onChange={(e) => handleAboutMeChange(e.target.value)}
+              className="w-full h-40 bg-gray-700 border border-primary/50 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="请输入您的个人介绍"
+            />
+          </div>
+        </div>
 
         {/* 技能编辑 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-secondary">核心技能</h2>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <h2 className="text-xl font-bold text-secondary">技能</h2>
+            <button
               onClick={handleAddSkill}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 text-sm"
             >
               ➕ 添加技能
-            </motion.button>
+            </button>
           </div>
           <div className="space-y-4">
             {data.skills.map((skill, index) => (
@@ -379,37 +358,28 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={() => handleRemoveSkill(index)}
                     className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
                   >
                     🗑️ 删除
-                  </motion.button>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* AI工具栈编辑 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-secondary">AI工具栈</h2>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={handleAddAIToolCategory}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 text-sm"
             >
               ➕ 添加分类
-            </motion.button>
+            </button>
           </div>
           <div className="space-y-6">
             {data.aiTools.map((tool, categoryIndex) => (
@@ -425,26 +395,22 @@ export default function AdminPage() {
                       placeholder="分类名称"
                     />
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={() => handleRemoveAIToolCategory(categoryIndex)}
                     className="ml-4 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
                   >
                     🗑️ 删除分类
-                  </motion.button>
+                  </button>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-medium">工具列表</div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={() => handleAddAIToolItem(categoryIndex)}
                       className="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/80 text-xs"
                     >
                       ➕ 添加工具
-                    </motion.button>
+                    </button>
                   </div>
                   <div className="space-y-2">
                     {tool.items.map((item, itemIndex) => (
@@ -456,14 +422,12 @@ export default function AdminPage() {
                           className="flex-1 bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="工具名称"
                         />
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                        <button
                           onClick={() => handleRemoveAIToolItem(categoryIndex, itemIndex)}
                           className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
                         >
                           🗑️
-                        </motion.button>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -471,121 +435,117 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* 项目编辑 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div className="mb-12 bg-gray-800 rounded-xl p-6 shadow-lg">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-secondary">项目管理</h2>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <h2 className="text-xl font-bold text-secondary">项目</h2>
+            <button
               onClick={handleAddProject}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 text-sm"
             >
               ➕ 添加项目
-            </motion.button>
+            </button>
           </div>
           <div className="space-y-6">
             {data.projects.map((project, projectIndex) => (
               <div key={projectIndex} className="bg-gray-700 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-bold text-primary">项目 {projectIndex + 1}</h3>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">项目 {projectIndex + 1}</h3>
+                  <button
                     onClick={() => handleRemoveProject(projectIndex)}
                     className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
                   >
                     🗑️ 删除项目
-                  </motion.button>
+                  </button>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">项目标题</label>
-                    <input
-                      type="text"
-                      value={project.title}
-                      onChange={(e) => handleProjectChange(projectIndex, 'title', e.target.value)}
-                      className="w-full bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="项目标题"
-                    />
+                
+                {/* 项目标题 */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">项目标题</label>
+                  <input
+                    type="text"
+                    value={project.title}
+                    onChange={(e) => handleProjectChange(projectIndex, 'title', e.target.value)}
+                    className="w-full bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="项目标题"
+                  />
+                </div>
+                
+                {/* 项目描述 */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">项目描述</label>
+                  <textarea
+                    value={project.description}
+                    onChange={(e) => handleProjectChange(projectIndex, 'description', e.target.value)}
+                    className="w-full h-24 bg-gray-600 border border-primary/50 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="项目描述"
+                  />
+                </div>
+                
+                {/* 项目技术栈 */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="block text-sm font-medium">技术栈</label>
+                    <button
+                      onClick={() => handleAddProjectTech(projectIndex)}
+                      className="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/80 text-xs"
+                    >
+                      ➕ 添加技术
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">项目描述</label>
-                    <textarea
-                      value={project.description}
-                      onChange={(e) => handleProjectChange(projectIndex, 'description', e.target.value)}
-                      className="w-full bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
-                      placeholder="项目描述"
-                    />
+                  <div className="space-y-2">
+                    {project.tech.map((tech, techIndex) => (
+                      <div key={techIndex} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={tech}
+                          onChange={(e) => handleProjectTechChange(projectIndex, techIndex, e.target.value)}
+                          className="flex-1 bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="技术名称"
+                        />
+                        <button
+                          onClick={() => handleRemoveProjectTech(projectIndex, techIndex)}
+                          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">项目图片URL</label>
-                    <input
-                      type="text"
-                      value={project.image}
-                      onChange={(e) => handleProjectChange(projectIndex, 'image', e.target.value)}
-                      className="w-full bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="项目图片URL"
+                </div>
+                
+                {/* 项目图片 */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">项目图片URL</label>
+                  <input
+                    type="text"
+                    value={project.image}
+                    onChange={(e) => handleProjectChange(projectIndex, 'image', e.target.value)}
+                    className="w-full bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="图片URL"
+                  />
+                </div>
+                
+                {/* 图片预览 */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">图片预览</label>
+                  <div className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
+                    <img 
+                      src={project.image} 
+                      alt={project.title} 
+                      className="w-full h-full object-cover"
                     />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <label className="block text-sm font-medium">技术栈</label>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleAddProjectTech(projectIndex)}
-                        className="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/80 text-xs"
-                      >
-                        ➕ 添加技术
-                      </motion.button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {project.tech.map((tech, techIndex) => (
-                        <div key={techIndex} className="flex gap-2">
-                          <input
-                            type="text"
-                            value={tech}
-                            onChange={(e) => handleProjectTechChange(projectIndex, techIndex, e.target.value)}
-                            className="bg-gray-600 border border-primary/50 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="技术名称"
-                          />
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleRemoveProjectTech(projectIndex, techIndex)}
-                            className="px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                          >
-                            🗑️
-                          </motion.button>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </motion.div>
-
-        {/* 底部信息 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-center text-muted text-sm mt-12"
-        >
-          <p>🔗 <a href="/" className="text-primary hover:underline">查看前端页面</a></p>
-          <p className="mt-2">© 2026 网站后台管理系统</p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default AdminPage;

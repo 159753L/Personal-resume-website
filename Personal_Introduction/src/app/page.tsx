@@ -3,12 +3,24 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 
-// 客户端粒子效果组件
+// 从data.ts导入数据和类型
+import { defaultData, WebsiteData, Skill } from './data';
+
+// 客户端粒子效果组件 - 修复hydration错误
 const ClientParticles = () => {
   const [isClient, setIsClient] = useState(false);
+  const [particles, setParticles] = useState<Array<{ x: number; y: number; duration: number; delay: number }>>([]);
 
   useEffect(() => {
     setIsClient(true);
+    // 仅在客户端生成随机粒子位置
+    const newParticles = Array.from({ length: 50 }).map(() => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      duration: Math.random() * 3 + 2,
+      delay: Math.random() * 5,
+    }));
+    setParticles(newParticles);
   }, []);
 
   if (!isClient) {
@@ -17,13 +29,13 @@ const ClientParticles = () => {
 
   return (
     <>
-      {Array.from({ length: 50 }).map((_, index) => (
+      {particles.map((particle, index) => (
         <motion.div
           key={index}
           className="absolute w-1 h-1 bg-primary/50 rounded-full"
           initial={{
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
+            x: particle.x,
+            y: particle.y,
             opacity: 0,
             scale: 0,
           }}
@@ -32,13 +44,30 @@ const ClientParticles = () => {
             scale: [0, 1, 0],
           }}
           transition={{
-            duration: Math.random() * 3 + 2,
+            duration: particle.duration,
             repeat: Infinity,
-            delay: Math.random() * 5,
+            delay: particle.delay,
           }}
         />
       ))}
     </>
+  );
+};
+
+// 客户端照片组件，解决hydration错误
+const ClientProfilePhoto = ({ src, alt }: { src: string; alt: string }) => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null; // 服务端渲染时返回null
+  }
+
+  return (
+    <img src={src} alt={alt} className="w-full h-full object-cover" />
   );
 };
 
@@ -329,262 +358,274 @@ const AIAssistant = () => {
 };
 
 // PDF简历生成按钮组件
-const PDFGenerator = ({ data }: { data: WebsiteData }) => {
+const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData; toggleEditMode: () => void; isEditMode: boolean }) => {
   const generatePDF = () => {
-    // 创建一个隐藏的HTML元素来构建简历内容
+    // 直接使用已经优化好的resume.html模板
     const resumeHTML = `
       <!DOCTYPE html>
       <html lang="zh-CN">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>个人简历</title>
+        <title>李国琪 - AI产品经理简历</title>
         <style>
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Microsoft YaHei', sans-serif;
           }
           
-          .resume-container {
-            display: flex;
-            width: 210mm;
-            height: 297mm;
-            margin: 0 auto;
-            overflow: hidden;
-          }
-          
-          .left-column {
-            width: 80mm;
-            height: 100%;
-            background-color: #2980b9;
-            color: white;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          
-          .right-column {
-            width: 130mm;
-            height: 100%;
-            padding: 20px;
+          body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.3;
+            color: #333;
             background-color: white;
-            color: black;
+            font-size: 13px;
           }
           
-          .profile-photo {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-top: 20px;
-            object-fit: cover;
+          .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 10px 15px;
+            background-color: white;
           }
           
-          .name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: center;
+          header {
+            display: flex;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007bff;
+            margin-bottom: 12px;
           }
           
-          .title {
-            font-size: 14px;
-            margin-top: 5px;
-            text-align: center;
-          }
-          
-          .section-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 30px;
-            text-align: center;
-            border-bottom: 1px solid white;
-            padding-bottom: 5px;
-            width: 100%;
+          h1 {
+            color: #007bff;
+            font-size: 1.8em;
+            margin: 0 0 3px 0;
           }
           
           .contact-info {
-            margin-top: 20px;
-            width: 100%;
-            font-size: 12px;
-          }
-          
-          .contact-info p {
-            margin-bottom: 10px;
-          }
-          
-          .skills-list {
-            margin-top: 20px;
-            width: 100%;
-            font-size: 12px;
-          }
-          
-          .skills-list ul {
-            list-style-type: disc;
-            margin-left: 20px;
-          }
-          
-          .skills-list li {
-            margin-bottom: 5px;
-          }
-          
-          .right-section {
-            margin-bottom: 30px;
-          }
-          
-          .right-section h2 {
-            font-size: 18px;
-            color: #2980b9;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #2980b9;
-            padding-bottom: 5px;
-          }
-          
-          .about-me {
-            font-size: 14px;
-            line-height: 1.5;
-          }
-          
-          .skill-bar {
-            margin-bottom: 15px;
-          }
-          
-          .skill-bar .skill-name {
-            font-size: 14px;
-            margin-bottom: 5px;
-          }
-          
-          .skill-bar .skill-progress {
-            width: 100%;
-            height: 10px;
-            background-color: #e0e0e0;
-            border-radius: 5px;
-            overflow: hidden;
-          }
-          
-          .skill-bar .skill-progress .progress {
-            height: 100%;
-            background-color: #2980b9;
-            border-radius: 5px;
-          }
-          
-          .project {
-            margin-bottom: 20px;
-          }
-          
-          .project h3 {
-            font-size: 16px;
-            margin-bottom: 5px;
-          }
-          
-          .project .description {
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 5px;
-          }
-          
-          .project .tech-stack {
-            font-size: 13px;
-            color: #2980b9;
-          }
-          
-          .ai-tool {
-            margin-bottom: 15px;
-          }
-          
-          .ai-tool h3 {
-            font-size: 16px;
-            color: #2980b9;
-            margin-bottom: 5px;
-          }
-          
-          .ai-tool .tools {
-            font-size: 14px;
-            line-height: 1.5;
-          }
-          
-          .footer {
-            font-size: 12px;
+            font-size: 0.95em;
             color: #666;
-            text-align: center;
-            margin-top: 20px;
+            margin-bottom: 3px;
+          }
+          
+          .contact-info span {
+            margin: 0 8px 0 0;
+          }
+          
+          section {
+            margin-bottom: 12px;
+          }
+          
+          h2 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 6px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #ddd;
+          }
+          
+          .section-content {
+            margin-left: 10px;
+          }
+          
+          .item {
+            margin-bottom: 8px;
+          }
+          
+          .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+          }
+          
+          .item-title {
+            font-weight: bold;
+            font-size: 1.05em;
+            color: #007bff;
+          }
+          
+          .item-date {
+            color: #666;
+            font-style: italic;
+            font-size: 0.85em;
+          }
+          
+          .item-company {
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 0.95em;
+          }
+          
+          .skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+          
+          .skill-tag {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+          }
+          
+          ul {
+            list-style-type: disc;
+            margin-left: 10px;
+            padding-left: 8px;
+          }
+          
+          li {
+            margin-bottom: 2px;
+            font-size: 0.9em;
+          }
+          
+          @media print {
+            body {
+              background-color: white;
+            }
+            
+            .container {
+              box-shadow: none;
+              margin: 0;
+              padding: 0;
+            }
           }
         </style>
       </head>
       <body>
-        <div class="resume-container">
-          <!-- 左侧栏 -->
-          <div class="left-column">
-            ${data.profilePhoto && data.profilePhoto !== '/profile_photo.jpg' ? `<img class="profile-photo" src="${data.profilePhoto}" alt="个人照片">` : ''}
-            <div class="name">AI开发者</div>
-            <div class="title">全栈开发者 & AI工程师</div>
-            
-            <div class="section-title">联系方式</div>
-            <div class="contact-info">
-              <p>邮箱: example@example.com</p>
-              <p>电话: 123-456-7890</p>
-              <p>地址: 中国 北京</p>
-              <p>GitHub: github.com/username</p>
-              <p>LinkedIn: linkedin.com/in/username</p>
+        <div class="container">
+          <header style="display: flex; align-items: center; padding-bottom: 20px; border-bottom: 2px solid #007bff;">
+            <!-- 左侧照片区域 -->
+            <div style="width: 120px; height: 160px; margin-right: 30px; border: 2px solid #007bff; border-radius: 8px; overflow: hidden; background-color: #f0f0f0; flex-shrink: 0;">
+              <!-- 照片占位符 -->
+              <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #999;">
+                <div style="font-size: 40px; margin-bottom: 5px;">📷</div>
+                <div>照片占位</div>
+              </div>
             </div>
             
-            <div class="section-title">专业技能</div>
-            <div class="skills-list">
+            <!-- 右侧个人信息区域 -->
+            <div style="flex: 1;">
+              <h1 style="margin: 0 0 10px 0; color: #007bff; font-size: 2.5em;">李国琪</h1>
+              <div class="contact-info" style="font-size: 1.1em; color: #666; margin-bottom: 10px;">
+                <span>📞 18533514715</span>
+                <span>📧 Anna799807@outlook.com</span>
+                <span>📍 深圳</span>
+                <span>💼 AI产品经理/AI提效专家/AI训练师</span>
+              </div>
+              <div style="color: #666; font-size: 1.1em;">
+                <span>ENTP</span> | 
+                <span>3年跨境运营主管</span> | 
+                <span>AI原生开发者</span> | 
+                <span>Prompt工程师</span> | 
+                <span>业务+技术双视角</span>
+              </div>
+            </div>
+          </header>
+          
+          <section>
+            <h2>🌟 核心优势</h2>
+            <div class="section-content">
               <ul>
-                ${Array.from(new Set([...data.skills.map(s => s.name), ...data.aiTools.flatMap(t => t.items)]))
-                  .slice(0, 15)
-                  .map(skill => `<li>${skill}</li>`)
-                  .join('')}
+                <li><strong>产品落地：</strong>可独立完成AI MVP从0到1全流程交付，熟练运用Trae、Coze等AI工具，高效推进产品从需求到落地的闭环。</li>
+                <li><strong>商业洞察：</strong>深耕跨境电商领域，熟悉全链路业务痛点，能精准挖掘AI技术与业务场景的结合点，实现技术赋能业务增长。</li>
+                <li><strong>技术能力：</strong>掌握LLM（大语言模型）核心特性，擅长RAG、CoT调优及自然语言编程，具备扎实的技术理解力与落地能力。</li>
+                <li><strong>数据驱动：</strong>拥有Google Analytics埋点部署、GitHub API配置实战经验，坚持以数据为导向，优化产品体验与业务效率。</li>
               </ul>
             </div>
-          </div>
+          </section>
           
-          <!-- 右侧栏 -->
-          <div class="right-column">
-            <div class="right-section">
-              <h2>个人简介</h2>
-              <div class="about-me">${data.aboutMe}</div>
-            </div>
-            
-            <div class="right-section">
-              <h2>核心技能</h2>
-              ${data.skills.map(skill => `
-                <div class="skill-bar">
-                  <div class="skill-name">${skill.name}: ${skill.percentage}%</div>
-                  <div class="skill-progress">
-                    <div class="progress" style="width: ${skill.percentage}%"></div>
-                  </div>
+          <section>
+            <h2>💼 工作经历</h2>
+            <div class="section-content">
+              <div class="item">
+                <div class="item-header">
+                  <div class="item-title">运营主管</div>
+                  <div class="item-date">2024.06 - 2026.01</div>
                 </div>
-              `).join('')}
+                <div class="item-company">深圳市智启达贸易有限公司</div>
+                <ul>
+                  <li>梳理公司跨境业务全流程，精准识别可AI替代的低效环节，输出标准化SOP文档，为后续AI提效工具落地奠定基础</li>
+                  <li>主导3款核心产品从0到1起量运营，制定精准推广与定价策略，实现单款产品月销售额突破100万</li>
+                  <li>引入AI工具优化运营全流程，重点提升客服响应效率与文案制作效率，实现双环节提效40%-50%</li>
+                </ul>
+              </div>
             </div>
-            
-            <div class="right-section">
-              <h2>精选项目</h2>
-              ${data.projects.map((project, index) => `
-                <div class="project">
-                  <h3>${index + 1}. ${project.title}</h3>
-                  <div class="description">${project.description}</div>
-                  <div class="tech-stack">技术栈: ${project.tech.join(', ')}</div>
+          </section>
+          
+          <section>
+            <h2>🎓 教育背景</h2>
+            <div class="section-content">
+              <div class="item">
+                <div class="item-header">
+                  <div class="item-title">旅游管理专业</div>
+                  <div class="item-date">2018.09 - 2022.06</div>
                 </div>
-              `).join('')}
+                <div class="item-company">河北科技师范学院</div>
+                <p>本科，主修市场营销、数据分析等核心课程，具备扎实的商业逻辑与用户思维，为AI产品落地、跨境运营等相关工作提供坚实理论支撑。</p>
+              </div>
             </div>
-            
-            <div class="right-section">
-              <h2>AI工具栈</h2>
-              ${data.aiTools.map(tool => `
-                <div class="ai-tool">
-                  <h3>${tool.category}</h3>
-                  <div class="tools">${tool.items.join(', ')}</div>
+          </section>
+          
+          <section>
+            <h2>🛠️ 技能清单</h2>
+            <div class="section-content">
+              <div class="skills">
+                <span class="skill-tag">Trae</span>
+                <span class="skill-tag">Coze</span>
+                <span class="skill-tag">LLM</span>
+                <span class="skill-tag">RAG</span>
+                <span class="skill-tag">CoT</span>
+                <span class="skill-tag">Prompt工程</span>
+                <span class="skill-tag">自然语言编程</span>
+                <span class="skill-tag">Google Analytics</span>
+                <span class="skill-tag">GitHub API</span>
+                <span class="skill-tag">PRD撰写</span>
+                <span class="skill-tag">需求拆解</span>
+                <span class="skill-tag">跨境电商运营</span>
+              </div>
+            </div>
+          </section>
+          
+          <section>
+            <h2>🚀 项目经历</h2>
+            <div class="section-content">
+              <div class="item">
+                <div class="item-header">
+                  <div class="item-title">AI育儿全生命周期助手（独立开发）</div>
+                  <div class="item-date">2025.12 - 2026.03</div>
                 </div>
-              `).join('')}
+                <ul>
+                  <li>聚焦备孕、青春期干预两大核心育儿场景，深入挖掘用户核心需求</li>
+                  <li>设计贴合实际使用场景的AI解决方案，全面适配育儿全阶段需求</li>
+                  <li>提升用户使用体验，实现AI技术与育儿场景的深度融合</li>
+                </ul>
+              </div>
+              
+              <div class="item">
+                <div class="item-header">
+                  <div class="item-title">跨境电商自动化创业项目</div>
+                  <div class="item-date">2025.09 - 2026.01</div>
+                </div>
+                <ul>
+                  <li>独立负责跨境电商全流程运营（选品、供应链、推广等）</li>
+                  <li>搭建AI自动化脚本优化核心业务流程，有效提升单店运营效率60%</li>
+                  <li>降低人力成本80%，实现业务稳定盈利</li>
+                </ul>
+              </div>
             </div>
-            
-            <div class="footer">
-              生成日期: ${new Date().toLocaleDateString()}
+          </section>
+          
+          <section>
+            <h2>💡 个人总结</h2>
+            <div class="section-content">
+              <p>拥有3年跨境运营主管实战经验，兼具扎实的业务认知与AI技术落地能力，擅长从业务痛点出发，运用AI工具打造高价值产品，可独立完成AI产品从0到1的落地与迭代，快速适配目标岗位，为团队创造核心价值。</p>
             </div>
-          </div>
+          </section>
         </div>
       </body>
       </html>
@@ -616,14 +657,27 @@ const PDFGenerator = ({ data }: { data: WebsiteData }) => {
   };
 
   return (
-    <motion.button 
-      className="btn-secondary fixed top-6 right-6 z-40"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={generatePDF}
-    >
-      📄 生成简历PDF
-    </motion.button>
+    <>
+      {/* 切换编辑模式按钮 */}
+      <motion.button 
+        className={`btn-${isEditMode ? 'primary' : 'secondary'} fixed top-6 right-60 z-40`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleEditMode}
+      >
+        {isEditMode ? '🔒 退出编辑' : '✏️ 进入编辑'}
+      </motion.button>
+      
+      {/* 生成PDF按钮 */}
+      <motion.button 
+        className="btn-secondary fixed top-6 right-6 z-40"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={generatePDF}
+      >
+        📄 生成简历PDF
+      </motion.button>
+    </>
   );
 };
 
@@ -682,7 +736,7 @@ const EditableText = ({ value, onChange, className = "", placeholder = "编辑�
 };
 
 // 可编辑技能组件
-const EditableSkill = ({ skill, percentage, onChange, isEditMode }: { skill: string; percentage: number; onChange: (skill: string, percentage: number) => void; isEditMode: boolean }) => {
+const EditableSkill = ({ skill, percentage, onChange, isEditMode, onDelete }: { skill: string; percentage: number; onChange: (skill: string, percentage: number) => void; isEditMode: boolean; onDelete?: (skill: string) => void }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editSkill, setEditSkill] = useState(skill);
   const [editPercentage, setEditPercentage] = useState(percentage.toString());
@@ -695,6 +749,12 @@ const EditableSkill = ({ skill, percentage, onChange, isEditMode }: { skill: str
   const handleEditClick = () => {
     if (isEditMode) {
       setIsEditing(true);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (onDelete) {
+      onDelete(skill);
     }
   };
 
@@ -737,6 +797,14 @@ const EditableSkill = ({ skill, percentage, onChange, isEditMode }: { skill: str
                   编辑
                 </button>
               )}
+              {isEditMode && onDelete && (
+                <button
+                  onClick={handleDeleteClick}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  删除
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -754,8 +822,122 @@ const EditableSkill = ({ skill, percentage, onChange, isEditMode }: { skill: str
   );
 };
 
+// 可编辑证书组件 - 荣誉墙风格
+const EditableCertificate = ({ certificate, index, onChange, isEditMode }: { certificate: { image: string; title: string; description: string }; index: number; onChange: (index: number, certificate: { image: string; title: string; description: string }) => void; isEditMode: boolean }) => {
+  const [editCertificate, setEditCertificate] = useState(certificate);
+  const [previewImage, setPreviewImage] = useState<string>(certificate.image);
+
+  // 处理图片上传
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Image = event.target?.result as string;
+        setPreviewImage(base64Image);
+        setEditCertificate({ ...editCertificate, image: base64Image });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 处理URL输入变化
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setPreviewImage(url);
+    setEditCertificate({ ...editCertificate, image: url });
+  };
+
+  const handleSave = () => {
+    onChange(index, editCertificate);
+  };
+
+  if (!isEditMode) {
+    return (
+      <motion.div 
+        className="certificate-item rounded-lg overflow-hidden border border-primary/20 bg-surface/50"
+        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 255, 255, 0.3)" }}
+      >
+        <img 
+          src={certificate.image} 
+          alt={certificate.title || '证书'} 
+          className="w-full h-48 object-cover"
+        />
+        {certificate.title && (
+          <div className="p-2">
+            <h4 className="text-sm font-bold text-center text-primary">{certificate.title}</h4>
+            {certificate.description && (
+              <p className="text-xs text-center text-muted truncate">{certificate.description}</p>
+            )}
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="certificate-item rounded-lg overflow-hidden border-2 border-primary/50 p-2 bg-surface/80">
+      {/* 图片预览 */}
+      {previewImage && (
+        <div className="mb-3">
+          <img 
+            src={previewImage} 
+            alt="预览" 
+            className="w-full h-32 object-cover rounded border border-primary/30"
+          />
+        </div>
+      )}
+      
+      {/* 文件上传选项 */}
+      <div className="mb-3">
+        <label className="block text-xs text-muted mb-1">选择本地图片：</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="w-full p-2 bg-background border border-primary/30 rounded"
+        />
+      </div>
+      
+      {/* 图片URL输入（可选） */}
+      <div className="mb-3">
+        <label className="block text-xs text-muted mb-1">或输入图片URL：</label>
+        <input
+          type="text"
+          value={editCertificate.image}
+          onChange={handleUrlChange}
+          placeholder="证书图片URL（可选）"
+          className="w-full p-2 bg-background border border-primary/30 rounded"
+        />
+      </div>
+      
+      {/* 证书信息 */}
+      <input
+        type="text"
+        value={editCertificate.title}
+        onChange={(e) => setEditCertificate({ ...editCertificate, title: e.target.value })}
+        placeholder="证书名称（可选）"
+        className="w-full mb-2 p-2 bg-background border border-primary/30 rounded"
+      />
+      <input
+        type="text"
+        value={editCertificate.description}
+        onChange={(e) => setEditCertificate({ ...editCertificate, description: e.target.value })}
+        placeholder="简短描述（可选）"
+        className="w-full mb-2 p-2 bg-background border border-primary/30 rounded"
+      />
+      <button
+        onClick={handleSave}
+        className="w-full py-2 bg-primary text-white rounded hover:bg-primary/80 transition-colors"
+      >
+        保存
+      </button>
+    </div>
+  );
+};
+
 // 可编辑项目组件
-const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project: { title: string; description: string; tech: string[]; image: string }; index: number; onChange: (index: number, project: { title: string; description: string; tech: string[]; image: string }) => void; isEditMode: boolean }) => {
+const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string }; index: number; onChange: (index: number, project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string }) => void; isEditMode: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editProject, setEditProject] = useState({ ...project });
   const [newTech, setNewTech] = useState("");
@@ -784,12 +966,48 @@ const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project
 
   return (
     <div className="project-card relative">
-      <div className="aspect-video bg-surface rounded-xl overflow-hidden mb-4">
-        <img
-          src={editProject.image}
-          alt={editProject.title}
-          className="w-full h-full object-cover"
-        />
+      <div className="aspect-video bg-surface rounded-xl overflow-hidden mb-4 relative">
+        {isEditMode ? (
+          <div className="relative w-full h-full">
+            <img
+              src={isEditing ? editProject.image : project.image}
+              alt={isEditing ? editProject.title : project.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <label className="cursor-pointer text-white flex items-center space-x-2 bg-primary/80 px-4 py-2 rounded-lg hover:bg-primary transition-colors">
+                <span>📁</span>
+                <span>上传图片</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64Image = event.target?.result as string;
+                        if (isEditing) {
+                          setEditProject(prev => ({ ...prev, image: base64Image }));
+                        } else {
+                          onChange(index, { ...project, image: base64Image });
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        ) : (
+          <img
+            src={isEditing ? editProject.image : project.image}
+            alt={isEditing ? editProject.title : project.title}
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
       {isEditing ? (
         <div>
@@ -799,12 +1017,26 @@ const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project
             onChange={(e) => setEditProject(prev => ({ ...prev, title: e.target.value }))}
             className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-xl font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <textarea
-            value={editProject.description}
-            onChange={(e) => setEditProject(prev => ({ ...prev, description: e.target.value }))}
-            className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-            rows={2}
-          />
+          <div className="mb-2">
+            <label className="block text-sm font-medium text-primary mb-1">精选项目描述：</label>
+            <textarea
+              value={editProject.briefDescription || ''}
+              onChange={(e) => setEditProject(prev => ({ ...prev, briefDescription: e.target.value }))}
+              className="w-full bg-surface border border-primary/50 rounded px-2 py-1 text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={2}
+              placeholder="精选项目的简短描述..."
+            />
+          </div>
+          <div className="mb-2">
+            <label className="block text-sm font-medium text-primary mb-1">项目案例痛点：</label>
+            <textarea
+              value={editProject.description}
+              onChange={(e) => setEditProject(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full bg-surface border border-primary/50 rounded px-2 py-1 text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={2}
+              placeholder="项目案例的痛点描述..."
+            />
+          </div>
           <div className="mb-2">
             <div className="flex flex-wrap gap-2 mb-1">
               {editProject.tech.map((tech, techIndex) => (
@@ -842,6 +1074,27 @@ const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project
             placeholder="图片URL"
             className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
+          <textarea
+            value={editProject.solution || ''}
+            onChange={(e) => setEditProject(prev => ({ ...prev, solution: e.target.value }))}
+            placeholder="解决方案..."
+            className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            rows={2}
+          />
+          <textarea
+            value={editProject.result || ''}
+            onChange={(e) => setEditProject(prev => ({ ...prev, result: e.target.value }))}
+            placeholder="成果..."
+            className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            rows={2}
+          />
+          <input
+            type="text"
+            value={editProject.link || ''}
+            onChange={(e) => setEditProject(prev => ({ ...prev, link: e.target.value }))}
+            placeholder="项目链接..."
+            className="w-full bg-surface border border-primary/50 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
           <button
             onClick={handleSave}
             className="btn-primary w-full"
@@ -852,7 +1105,7 @@ const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project
       ) : (
         <div>
           <EditableText value={editProject.title} onChange={(value) => setEditProject(prev => ({ ...prev, title: value }))} className="text-xl font-bold mb-2 text-primary" isEditMode={isEditMode} />
-          <p className="text-muted mb-4">{editProject.description}</p>
+          <p className="text-muted mb-4">{editProject.briefDescription || editProject.description}</p>
           <div className="flex flex-wrap gap-2">
             {editProject.tech.map((item, index) => (
               <span key={index} className="tech-badge">{item}</span>
@@ -873,82 +1126,10 @@ const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project
 };
 
 // 定义数据类型
-interface Skill {
-  name: string;
-  percentage: number;
-}
+// 所有接口定义已移至src/app/data.ts文件
 
-interface Project {
-  title: string;
-  description: string;
-  tech: string[];
-  image: string;
-}
-
-interface AITool {
-  category: string;
-  items: string[];
-}
-
-interface WebsiteData {
-  aboutMe: string;
-  profilePhoto: string;
-  skills: Skill[];
-  projects: Project[];
-  aiTools: AITool[];
-}
-
-// 默认数据
-const defaultData: WebsiteData = {
-  aboutMe: "作为一名AI开发者，我专注于构建智能、高效的AI解决方案。我热爱探索前沿技术，并将其应用于实际问题中。",
-  profilePhoto: "/profile_photo.jpg",
-  skills: [
-    { name: "Python", percentage: 95 },
-    { name: "JavaScript", percentage: 92 },
-    { name: "React", percentage: 90 },
-    { name: "Node.js", percentage: 88 },
-    { name: "TensorFlow", percentage: 93 },
-    { name: "PyTorch", percentage: 91 },
-    { name: "LangChain", percentage: 85 }
-  ],
-  projects: [
-    {
-      title: "AI聊天机器人",
-      description: "基于GPT-4的智能聊天机器人，具有多轮对话能力和上下文理解能力。",
-      tech: ["React", "Node.js", "OpenAI API"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AI%20chatbot%20interface%20with%20futuristic%20design%2C%20dark%20theme%2C%20blue%20accent%20colors&image_size=square_hd"
-    },
-    {
-      title: "图像识别系统",
-      description: "使用深度学习技术实现的图像识别系统，准确率达到98%以上。",
-      tech: ["Python", "TensorFlow", "CNN"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Image%20recognition%20system%20dashboard%2C%20futuristic%20design%2C%20dark%20theme%2C%20green%20accent%20colors&image_size=square_hd"
-    },
-    {
-      title: "智能推荐系统",
-      description: "基于协同过滤和内容过滤的混合推荐系统，提高用户体验。",
-      tech: ["Python", "Scikit-learn", "FastAPI"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Smart%20recommendation%20system%20interface%2C%20futuristic%20design%2C%20dark%20theme%2C%20purple%20accent%20colors&image_size=square_hd"
-    },
-    {
-      title: "语音助手应用",
-      description: "基于深度学习的语音识别和自然语言处理应用，支持语音命令和实时翻译功能。",
-      tech: ["Python", "PyTorch", "Librosa", "Flask"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Voice%20assistant%20application%20interface%2C%20futuristic%20design%2C%20dark%20theme%2C%20orange%20accent%20colors&image_size=square_hd"
-    },
-    {
-      title: "自动驾驶模拟系统",
-      description: "基于强化学习的自动驾驶模拟环境，用于训练和测试自动驾驶算法。",
-      tech: ["Python", "Unity", "PyTorch", "OpenCV"],
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Autonomous%20driving%20simulation%20system%2C%20futuristic%20car%2C%20dark%20theme%2C%20red%20accent%20colors&image_size=square_hd"
-    }
-  ],
-  aiTools: [
-    { category: "Prompt Engineering", items: ["System Prompts", "Few-shot Learning", "Chain-of-Thought"] },
-    { category: "Development", items: ["Cursor", "Claude 3.5 Sonnet", "LangChain"] },
-    { category: "Efficiency", items: ["AI Automation", "Code Generation", "Documentation"] }
-  ]
-};
+// 默认数据已移至src/app/data.ts文件
+// 此定义已被导入替代
 
 // 从localStorage加载数据
 const loadData = (): WebsiteData => {
@@ -956,7 +1137,34 @@ const loadData = (): WebsiteData => {
     // 仅在客户端使用localStorage
     if (typeof window !== 'undefined') {
       const savedData = localStorage.getItem('websiteData');
-      return savedData ? JSON.parse(savedData) : defaultData;
+      if (savedData) {
+        // 将解析后的数据与defaultData合并，确保所有必需的字段都存在
+        const parsedData = JSON.parse(savedData);
+        
+        // 特别确保projects字段存在且与defaultData的结构一致
+        // 合并projects数组，确保每个项目都包含所有必需的字段
+        const mergedProjects = defaultData.projects.map((defaultProject, index) => {
+          // 如果localStorage中有对应的项目，则合并
+          const parsedProject = parsedData.projects?.[index];
+          if (parsedProject) {
+            return {
+              ...defaultProject,
+              ...parsedProject
+            };
+          }
+          // 否则使用默认项目
+          return defaultProject;
+        });
+        
+        return {
+          ...defaultData,
+          ...parsedData,
+          // 使用合并后的projects数组
+          projects: mergedProjects,
+          // 特别确保certificates字段存在
+          certificates: parsedData.certificates || defaultData.certificates
+        };
+      }
     }
     return defaultData;
   } catch (error) {
@@ -970,11 +1178,65 @@ export default function Home() {
   const opacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.1], [1, 0.95]);
 
-  // 固定为查看模式，所有编辑在后台进行
-  const isEditMode = false;
+  // 编辑模式状态管理
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
-  // 加载数据
-  const [data, setData] = useState<WebsiteData>(loadData);
+  // 编辑模式密码（可以修改为您想要的密码）
+  const EDIT_PASSWORD = '123456';
+
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    if (isEditMode) {
+      // 如果已经在编辑模式，直接退出
+      setIsEditMode(false);
+    } else {
+      // 如果不在编辑模式，显示密码输入框
+      setShowPasswordModal(true);
+      setPassword('');
+      setPasswordError('');
+    }
+  };
+
+  // 验证密码并进入编辑模式
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === EDIT_PASSWORD) {
+      setIsEditMode(true);
+      setShowPasswordModal(false);
+      setPasswordError('');
+    } else {
+      setPasswordError('密码错误，请重新输入');
+    }
+  };
+
+  // 关闭密码输入框
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPassword('');
+    setPasswordError('');
+  };
+
+  // 初始化数据为defaultData
+  const [data, setData] = useState<WebsiteData>(defaultData);
+
+  // 在客户端加载数据，避免hydration错误
+  useEffect(() => {
+    const loadedData = loadData();
+    if (loadedData) {
+      setData(loadedData);
+    }
+  }, []);
+
+  // 客户端渲染状态
+  const [isClient, setIsClient] = useState(false);
+
+  // 确保只在客户端渲染
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 定期检查数据更新
   useEffect(() => {
@@ -1004,8 +1266,26 @@ export default function Home() {
     localStorage.setItem('websiteData', JSON.stringify(updatedData));
   };
 
+  // 添加新技能
+  const addNewSkill = () => {
+    const newSkill = { name: '新技能', percentage: 50 };
+    const updatedSkills = [...skills, newSkill];
+    const updatedData = { ...data, skills: updatedSkills };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 删除技能
+  const deleteSkill = (skillName: string) => {
+    if (skills.length <= 1) return; // 至少保留一个技能
+    const updatedSkills = skills.filter(skill => skill.name !== skillName);
+    const updatedData = { ...data, skills: updatedSkills };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
   // 处理项目更新
-  const handleProjectChange = (index: number, updatedProject: { title: string; description: string; tech: string[]; image: string }) => {
+  const handleProjectChange = (index: number, updatedProject: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string }) => {
     const updatedProjects = projects.map((project, i) => 
       i === index ? updatedProject : project
     );
@@ -1014,10 +1294,113 @@ export default function Home() {
     localStorage.setItem('websiteData', JSON.stringify(updatedData));
   };
 
+  // 保存状态
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 保存所有项目修改
+  const saveAllProjects = () => {
+    setIsSaving(true);
+    
+    // 触发保存效果，确保所有数据都已保存
+    const updatedData = {
+      ...data,
+      projects: [...projects] // 确保引用更新
+    };
+    
+    // 重新保存所有数据到localStorage
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+    
+    // 视觉反馈
+    setTimeout(() => {
+      setIsSaving(false);
+      alert('所有项目修改已成功保存！\n\n数据已保存到浏览器的localStorage中，\n您可以通过"💾 导出数据"按钮将数据永久保存到文件中。');
+    }, 800);
+  };
+
+  // 处理证书更新
+  const handleCertificateChange = (index: number, updatedCertificate: { image: string; title: string; description: string }) => {
+    const updatedCertificates = data.certificates.map((certificate, i) => 
+      i === index ? updatedCertificate : certificate
+    );
+    const updatedData = { ...data, certificates: updatedCertificates };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
   return (
     <div className="min-h-screen">
       <CursorFollower />
-      <PDFGenerator data={data} />
+      
+      {/* 密码输入模态框 */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <motion.div 
+            className="bg-surface p-8 rounded-2xl shadow-2xl border border-primary/50 w-full max-w-md"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <h2 className="text-2xl font-bold text-primary mb-6 text-center">进入编辑模式</h2>
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="mb-4">
+                <label htmlFor="password" className="block text-sm font-medium text-muted mb-2">密码</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-background border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="请输入编辑模式密码"
+                  autoFocus
+                />
+              </div>
+              {passwordError && (
+                <div className="text-red-500 text-sm mb-4">{passwordError}</div>
+              )}
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  className="flex-1 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                >
+                  确认
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+      {/* 数据导出按钮 */}
+      {isEditMode && (
+        <motion.button 
+          className="btn-secondary fixed top-6 right-112 z-40"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            const currentData = JSON.stringify(data, null, 2);
+            const blob = new Blob([currentData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'websiteData.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('数据已导出，请将导出的JSON内容更新到defaultData中！');
+          }}
+        >
+          💾 导出数据
+        </motion.button>
+      )}
+      
+      <PDFGenerator data={data} toggleEditMode={toggleEditMode} isEditMode={isEditMode} />
       <AIAssistant />
       
 
@@ -1041,10 +1424,10 @@ export default function Home() {
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="text-white">你好，我是</span> 
-              <span className="glow-text">AI开发者</span>
+              <span className="glow-text">李国琪</span>
             </h1>
             <p className="text-2xl md:text-3xl text-muted mb-8 max-w-3xl mx-auto">
-              <TypewriterEffect text="专注于创建智能、高效的AI解决方案" />
+              <TypewriterEffect text="AI产品经理 | AI训练师" />
             </p>
             <motion.button 
               className="btn-primary text-lg px-8 py-3"
@@ -1080,7 +1463,10 @@ export default function Home() {
             transition={{ type: 'spring', stiffness: 300 }}
           >
             <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl overflow-hidden mb-4">
-              <img src={data.profilePhoto} alt="个人照片" className="w-full h-full object-cover" />
+              {/* 只在客户端渲染照片，避免hydration错误 */}
+              {isClient && (
+                <img src={data.profilePhoto} alt="个人照片" className="w-full h-full object-cover" />
+              )}
             </div>
             <h3 className="text-xl font-bold mb-2 text-primary">关于我</h3>
             <EditableText 
@@ -1094,6 +1480,22 @@ export default function Home() {
               placeholder="编辑个人简介..."
               isEditMode={isEditMode}
             />
+            {isEditMode && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-muted mb-1">GitHub链接：</label>
+                <input
+                  type="text"
+                  value={data.githubLink || ''}
+                  onChange={(e) => {
+                    const updatedData = { ...data, githubLink: e.target.value };
+                    setData(updatedData);
+                    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+                  }}
+                  className="w-full bg-surface border border-primary/50 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="输入GitHub链接..."
+                />
+              </div>
+            )}
           </motion.div>
 
           {/* AI工具栈卡片 */}
@@ -1127,9 +1529,18 @@ export default function Home() {
                   skill={skillItem.name}
                   percentage={skillItem.percentage}
                   onChange={(newSkill, newPercentage) => handleSkillChange(skillItem.name, newSkill, newPercentage)}
+                  onDelete={(skillName) => deleteSkill(skillName)}
                   isEditMode={isEditMode}
                 />
               ))}
+              {isEditMode && (
+                <button
+                  onClick={addNewSkill}
+                  className="w-full py-2 text-sm text-center text-primary hover:bg-primary/10 rounded"
+                >
+                  ➕ 添加新技能
+                </button>
+              )}
             </div>
           </motion.div>
 
@@ -1146,6 +1557,26 @@ export default function Home() {
               ))}
             </div>
           </motion.div>
+          
+          {/* 荣誉墙展示 */}
+          <motion.div 
+            className="bento-card lg:col-span-3"
+            whileHover={{ y: -5 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <h3 className="text-xl font-bold mb-6 text-secondary">荣誉墙</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {data.certificates.map((certificate, index) => (
+                <EditableCertificate 
+                  key={index}
+                  certificate={certificate} 
+                  index={index} 
+                  onChange={handleCertificateChange} 
+                  isEditMode={isEditMode} 
+                />
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1157,6 +1588,29 @@ export default function Home() {
             <span className="glow-text">案例研究</span>
           </h2>
 
+          {/* 保存按钮 */}
+          {isEditMode && (
+            <motion.button 
+              className="btn-primary mb-6"
+              whileHover={!isSaving ? { scale: 1.05 } : {}}
+              whileTap={!isSaving ? { scale: 0.95 } : {}}
+              onClick={saveAllProjects}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  保存中...
+                </span>
+              ) : (
+                '💾 保存所有项目修改'
+              )}
+            </motion.button>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {projects.map((project, index) => (
               <motion.div 
@@ -1167,29 +1621,127 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="aspect-video bg-surface rounded-xl overflow-hidden mb-4">
-                  <img 
-                    src={project.image} 
-                    alt={project.title} 
-                    className="w-full h-full object-cover"
-                  />
+                <div className="aspect-video bg-surface rounded-xl overflow-hidden mb-4 relative">
+                  {isEditMode ? (
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={project.image} 
+                        alt={project.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <label className="cursor-pointer text-white flex items-center space-x-2 bg-primary/80 px-4 py-2 rounded-lg hover:bg-primary transition-colors">
+                          <span>📁</span>
+                          <span>上传图片</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64Image = event.target?.result as string;
+                                  handleProjectChange(index, { ...project, image: base64Image });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <img 
+                      src={project.image} 
+                      alt={project.title} 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <EditableText value={project.title} onChange={(value) => handleProjectChange(index, { ...project, title: value })} className="text-xl font-bold mb-2 text-primary" isEditMode={isEditMode} />
+                {/* 可编辑的项目详情 */}
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-lg font-semibold mb-2 text-secondary">痛点</h4>
-                    <p className="text-muted">需要一个智能的解决方案来处理用户查询，提高响应速度和准确性。</p>
+                    {isEditMode ? (
+                      <textarea
+                        value={project.description}
+                        onChange={(e) => handleProjectChange(index, { ...project, description: e.target.value })}
+                        className="w-full p-3 bg-background border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                        rows={3}
+                        placeholder="描述项目的痛点..."
+                      />
+                    ) : (
+                      <p className="text-muted">{project.description}</p>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold mb-2 text-secondary">解决方案</h4>
-                    <p className="text-muted">使用GPT-4模型和LangChain框架，构建了一个具有上下文理解能力的聊天机器人。</p>
+                    {isEditMode ? (
+                      <textarea
+                        value={project.solution || ''}
+                        onChange={(e) => handleProjectChange(index, { ...project, solution: e.target.value })}
+                        className="w-full p-3 bg-background border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                        rows={3}
+                        placeholder="描述解决方案..."
+                      />
+                    ) : (
+                      <p className="text-muted">{project.solution || '暂无解决方案描述'}</p>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold mb-2 text-secondary">成果</h4>
-                    <p className="text-muted">提高了用户满意度，减少了人工客服的工作量，响应时间缩短了80%。</p>
+                    {isEditMode ? (
+                      <textarea
+                        value={project.result || ''}
+                        onChange={(e) => handleProjectChange(index, { ...project, result: e.target.value })}
+                        className="w-full p-3 bg-background border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                        rows={3}
+                        placeholder="描述项目成果..."
+                      />
+                    ) : (
+                      <p className="text-muted">{project.result || '暂无成果描述'}</p>
+                    )}
+                  </div>
+                  
+                  {/* 可编辑的项目链接 */}
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2 text-secondary">项目链接</h4>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={project.link || ''}
+                        onChange={(e) => handleProjectChange(index, { ...project, link: e.target.value })}
+                        className="w-full p-3 bg-background border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary transition-colors"
+                        placeholder="输入项目链接或网址..."
+                      />
+                    ) : (
+                      project.link && (
+                        <p className="text-muted break-all">
+                          <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {project.link}
+                          </a>
+                        </p>
+                      )
+                    )}
                   </div>
                 </div>
-                <button className="btn-primary mt-6">查看完整案例</button>
+                
+                {/* 查看完整案例按钮/链接 */}
+                {project.link ? (
+                  <a 
+                    href={project.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn-primary mt-6 inline-block"
+                  >
+                    查看完整案例
+                  </a>
+                ) : (
+                  <button className="btn-primary mt-6">查看完整案例</button>
+                )}
               </motion.div>
             ))}
           </div>
@@ -1213,13 +1765,28 @@ export default function Home() {
           >
             发送邮件
           </motion.button>
-          <motion.button 
-            className="btn-secondary px-8 py-3"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            查看GitHub
-          </motion.button>
+          {data.githubLink ? (
+            <motion.a 
+              href={data.githubLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary px-8 py-3 inline-block"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              查看GitHub
+            </motion.a>
+          ) : (
+            <motion.button 
+              className="btn-secondary px-8 py-3"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled
+              title="请先设置GitHub链接"
+            >
+              查看GitHub
+            </motion.button>
+          )}
         </div>
       </section>
 

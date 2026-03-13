@@ -1424,10 +1424,10 @@ export default function Home() {
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="text-white">你好，我是</span> 
-              <span className="glow-text">李国琪</span>
+              <span className="glow-text">{data.heroTitle}</span>
             </h1>
             <p className="text-2xl md:text-3xl text-muted mb-8 max-w-3xl mx-auto">
-              <TypewriterEffect text="AI产品经理 | AI训练师" />
+              <TypewriterEffect text={data.heroSubtitle} />
             </p>
             <motion.button 
               className="btn-primary text-lg px-8 py-3"
@@ -1793,7 +1793,7 @@ export default function Home() {
       {/* 页脚 */}
       <footer className="py-10 border-t border-white/10">
         <div className="container mx-auto px-4 text-center text-muted">
-          <p>© 2026 AI开发者. 保留所有权利.</p>
+          <p>© {new Date().getFullYear()} {data.footerTitle || 'AI开发者'}. 保留所有权利.</p>
           <p className="mt-2 text-sm">使用Next.js、Tailwind CSS和Framer Motion构建</p>
         </div>
       </footer>

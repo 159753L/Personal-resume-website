@@ -33,6 +33,8 @@ export interface WebsiteData {
   githubLink?: string;
   heroTitle: string; // 英雄区域标题
   heroSubtitle: string; // 英雄区域副标题
+  footerTitle?: string; // 页脚标题
+  copyrightYear?: string; // 版权年份
 }
 
 // 默认数据配置
@@ -180,5 +182,6 @@ export const defaultData: WebsiteData = {
       "description": ""
     }
   ],
-  "githubLink": "https://github.com/159753L/"
+  "githubLink": "https://github.com/159753L/",
+  "footerTitle": "AI开发者"
 }

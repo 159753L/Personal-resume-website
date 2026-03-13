@@ -937,7 +937,7 @@ const EditableCertificate = ({ certificate, index, onChange, isEditMode }: { cer
 };
 
 // 可编辑项目组件
-const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string }; index: number; onChange: (index: number, project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string }) => void; isEditMode: boolean }) => {
+const EditableProjectCard = ({ project, index, onChange, isEditMode }: { project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string; briefDescription?: string }; index: number; onChange: (index: number, project: { title: string; description: string; tech: string[]; image: string; solution?: string; result?: string; link?: string; briefDescription?: string }) => void; isEditMode: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editProject, setEditProject] = useState({ ...project });
   const [newTech, setNewTech] = useState("");

@@ -360,14 +360,14 @@ const AIAssistant = () => {
 // PDF简历生成按钮组件
 const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData; toggleEditMode: () => void; isEditMode: boolean }) => {
   const generatePDF = () => {
-    // 直接使用已经优化好的resume.html模板
+    // 使用从data.ts传入的resume数据生成简历
     const resumeHTML = `
       <!DOCTYPE html>
       <html lang="zh-CN">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>李国琪 - AI产品经理简历</title>
+        <title>${data.resume.name} - ${data.resume.position}简历</title>
         <style>
           * {
             margin: 0;
@@ -510,19 +510,15 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
             
             <!-- 右侧个人信息区域 -->
             <div style="flex: 1;">
-              <h1 style="margin: 0 0 10px 0; color: #007bff; font-size: 2.5em;">李国琪</h1>
+              <h1 style="margin: 0 0 10px 0; color: #007bff; font-size: 2.5em;">${data.resume.name}</h1>
               <div class="contact-info" style="font-size: 1.1em; color: #666; margin-bottom: 10px;">
-                <span>📞 18533514715</span>
-                <span>📧 Anna799807@outlook.com</span>
-                <span>📍 深圳</span>
-                <span>💼 AI产品经理/AI提效专家/AI训练师</span>
+                <span>📞 ${data.resume.phone}</span>
+                <span>📧 ${data.resume.email}</span>
+                <span>📍 ${data.resume.location}</span>
+                <span>💼 ${data.resume.position}</span>
               </div>
               <div style="color: #666; font-size: 1.1em;">
-                <span>ENTP</span> | 
-                <span>3年跨境运营主管</span> | 
-                <span>AI原生开发者</span> | 
-                <span>Prompt工程师</span> | 
-                <span>业务+技术双视角</span>
+                ${data.resume.tags.map(tag => `<span>${tag}</span>`).join(' | ')}
               </div>
             </div>
           </header>
@@ -531,10 +527,7 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
             <h2>🌟 核心优势</h2>
             <div class="section-content">
               <ul>
-                <li><strong>产品落地：</strong>可独立完成AI MVP从0到1全流程交付，熟练运用Trae、Coze等AI工具，高效推进产品从需求到落地的闭环。</li>
-                <li><strong>商业洞察：</strong>深耕跨境电商领域，熟悉全链路业务痛点，能精准挖掘AI技术与业务场景的结合点，实现技术赋能业务增长。</li>
-                <li><strong>技术能力：</strong>掌握LLM（大语言模型）核心特性，擅长RAG、CoT调优及自然语言编程，具备扎实的技术理解力与落地能力。</li>
-                <li><strong>数据驱动：</strong>拥有Google Analytics埋点部署、GitHub API配置实战经验，坚持以数据为导向，优化产品体验与业务效率。</li>
+                ${data.resume.coreStrengths.map(strength => `<li>${strength}</li>`).join('')}
               </ul>
             </div>
           </section>
@@ -542,18 +535,18 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
           <section>
             <h2>💼 工作经历</h2>
             <div class="section-content">
-              <div class="item">
-                <div class="item-header">
-                  <div class="item-title">运营主管</div>
-                  <div class="item-date">2024.06 - 2026.01</div>
+              ${data.resume.experiences.map(experience => `
+                <div class="item">
+                  <div class="item-header">
+                    <div class="item-title">${experience.title}</div>
+                    <div class="item-date">${experience.date}</div>
+                  </div>
+                  <div class="item-company">${experience.company}</div>
+                  <ul>
+                    ${experience.description.map(desc => `<li>${desc}</li>`).join('')}
+                  </ul>
                 </div>
-                <div class="item-company">深圳市智启达贸易有限公司</div>
-                <ul>
-                  <li>梳理公司跨境业务全流程，精准识别可AI替代的低效环节，输出标准化SOP文档，为后续AI提效工具落地奠定基础</li>
-                  <li>主导3款核心产品从0到1起量运营，制定精准推广与定价策略，实现单款产品月销售额突破100万</li>
-                  <li>引入AI工具优化运营全流程，重点提升客服响应效率与文案制作效率，实现双环节提效40%-50%</li>
-                </ul>
-              </div>
+              `).join('')}
             </div>
           </section>
           
@@ -562,11 +555,11 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
             <div class="section-content">
               <div class="item">
                 <div class="item-header">
-                  <div class="item-title">旅游管理专业</div>
-                  <div class="item-date">2018.09 - 2022.06</div>
+                  <div class="item-title">${data.resume.education.title}</div>
+                  <div class="item-date">${data.resume.education.date}</div>
                 </div>
-                <div class="item-company">河北科技师范学院</div>
-                <p>本科，主修市场营销、数据分析等核心课程，具备扎实的商业逻辑与用户思维，为AI产品落地、跨境运营等相关工作提供坚实理论支撑。</p>
+                <div class="item-company">${data.resume.education.school}</div>
+                <p>${data.resume.education.description}</p>
               </div>
             </div>
           </section>
@@ -575,18 +568,7 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
             <h2>🛠️ 技能清单</h2>
             <div class="section-content">
               <div class="skills">
-                <span class="skill-tag">Trae</span>
-                <span class="skill-tag">Coze</span>
-                <span class="skill-tag">LLM</span>
-                <span class="skill-tag">RAG</span>
-                <span class="skill-tag">CoT</span>
-                <span class="skill-tag">Prompt工程</span>
-                <span class="skill-tag">自然语言编程</span>
-                <span class="skill-tag">Google Analytics</span>
-                <span class="skill-tag">GitHub API</span>
-                <span class="skill-tag">PRD撰写</span>
-                <span class="skill-tag">需求拆解</span>
-                <span class="skill-tag">跨境电商运营</span>
+                ${data.resume.skills.map(skill => `<span class="skill-tag">${skill.name}</span>`).join('')}
               </div>
             </div>
           </section>
@@ -594,36 +576,24 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
           <section>
             <h2>🚀 项目经历</h2>
             <div class="section-content">
-              <div class="item">
-                <div class="item-header">
-                  <div class="item-title">AI育儿全生命周期助手（独立开发）</div>
-                  <div class="item-date">2025.12 - 2026.03</div>
+              ${data.resume.projects.map(project => `
+                <div class="item">
+                  <div class="item-header">
+                    <div class="item-title">${project.title}</div>
+                    <div class="item-date">${project.date}</div>
+                  </div>
+                  <ul>
+                    ${project.description.map(desc => `<li>${desc}</li>`).join('')}
+                  </ul>
                 </div>
-                <ul>
-                  <li>聚焦备孕、青春期干预两大核心育儿场景，深入挖掘用户核心需求</li>
-                  <li>设计贴合实际使用场景的AI解决方案，全面适配育儿全阶段需求</li>
-                  <li>提升用户使用体验，实现AI技术与育儿场景的深度融合</li>
-                </ul>
-              </div>
-              
-              <div class="item">
-                <div class="item-header">
-                  <div class="item-title">跨境电商自动化创业项目</div>
-                  <div class="item-date">2025.09 - 2026.01</div>
-                </div>
-                <ul>
-                  <li>独立负责跨境电商全流程运营（选品、供应链、推广等）</li>
-                  <li>搭建AI自动化脚本优化核心业务流程，有效提升单店运营效率60%</li>
-                  <li>降低人力成本80%，实现业务稳定盈利</li>
-                </ul>
-              </div>
+              `).join('')}
             </div>
           </section>
           
           <section>
             <h2>💡 个人总结</h2>
             <div class="section-content">
-              <p>拥有3年跨境运营主管实战经验，兼具扎实的业务认知与AI技术落地能力，擅长从业务痛点出发，运用AI工具打造高价值产品，可独立完成AI产品从0到1的落地与迭代，快速适配目标岗位，为团队创造核心价值。</p>
+              <p>${data.resume.summary}</p>
             </div>
           </section>
         </div>

@@ -23,6 +23,46 @@ export interface AITool {
   items: string[];
 }
 
+// 简历相关接口
+export interface ResumeExperience {
+  title: string;
+  date: string;
+  company: string;
+  description: string[];
+}
+
+export interface ResumeEducation {
+  title: string;
+  date: string;
+  school: string;
+  description: string;
+}
+
+export interface ResumeSkill {
+  name: string;
+}
+
+export interface ResumeProject {
+  title: string;
+  date: string;
+  description: string[];
+}
+
+export interface Resume {
+  name: string;
+  phone: string;
+  email: string;
+  location: string;
+  position: string;
+  tags: string[];
+  coreStrengths: string[];
+  experiences: ResumeExperience[];
+  education: ResumeEducation;
+  skills: ResumeSkill[];
+  projects: ResumeProject[];
+  summary: string;
+}
+
 export interface WebsiteData {
   aboutMe: string;
   profilePhoto: string;
@@ -35,6 +75,7 @@ export interface WebsiteData {
   heroSubtitle: string; // 英雄区域副标题
   footerTitle?: string; // 页脚标题
   copyrightYear?: string; // 版权年份
+  resume: Resume; // 简历数据
 }
 
 // 默认数据配置
@@ -183,5 +224,72 @@ export const defaultData: WebsiteData = {
     }
   ],
   "githubLink": "https://github.com/159753L/",
-  "footerTitle": "AI开发者"
+  "footerTitle": "AI开发者",
+  "resume": {
+    "name": "李国琪",
+    "phone": "18533514715",
+    "email": "Anna799807@outlook.com",
+    "location": "深圳",
+    "position": "AI产品经理/AI提效专家/AI训练师",
+    "tags": ["ENTP", "3年跨境运营主管", "AI原生开发者", "Prompt工程师", "业务+技术双视角"],
+    "coreStrengths": [
+      "产品落地：可独立完成AI MVP从0到1全流程交付，熟练运用Trae、Coze等AI工具，高效推进产品从需求到落地的闭环。",
+      "商业洞察：深耕跨境电商领域，熟悉全链路业务痛点，能精准挖掘AI技术与业务场景的结合点，实现技术赋能业务增长。",
+      "技术能力：掌握LLM（大语言模型）核心特性，擅长RAG、CoT调优及自然语言编程，具备扎实的技术理解力与落地能力。",
+      "数据驱动：拥有Google Analytics埋点部署、GitHub API配置实战经验，坚持以数据为导向，优化产品体验与业务效率。"
+    ],
+    "experiences": [
+      {
+        "title": "运营主管",
+        "date": "2024.06 - 2026.01",
+        "company": "深圳市智启达贸易有限公司",
+        "description": [
+          "梳理公司跨境业务全流程，精准识别可AI替代的低效环节，输出标准化SOP文档，为后续AI提效工具落地奠定基础",
+          "主导3款核心产品从0到1起量运营，制定精准推广与定价策略，实现单款产品月销售额突破100万",
+          "引入AI工具优化运营全流程，重点提升客服响应效率与文案制作效率，实现双环节提效40%-50%"
+        ]
+      }
+    ],
+    "education": {
+      "title": "旅游管理专业",
+      "date": "2018.09 - 2022.06",
+      "school": "河北科技师范学院",
+      "description": "本科，主修市场营销、数据分析等核心课程，具备扎实的商业逻辑与用户思维，为AI产品落地、跨境运营等相关工作提供坚实理论支撑。"
+    },
+    "skills": [
+      { "name": "Trae" },
+      { "name": "Coze" },
+      { "name": "LLM" },
+      { "name": "RAG" },
+      { "name": "CoT" },
+      { "name": "Prompt工程" },
+      { "name": "自然语言编程" },
+      { "name": "Google Analytics" },
+      { "name": "GitHub API" },
+      { "name": "PRD撰写" },
+      { "name": "需求拆解" },
+      { "name": "跨境电商运营" }
+    ],
+    "projects": [
+      {
+        "title": "AI育儿全生命周期助手（独立开发）",
+        "date": "2025.12 - 2026.03",
+        "description": [
+          "聚焦备孕、青春期干预两大核心育儿场景，深入挖掘用户核心需求",
+          "设计贴合实际使用场景的AI解决方案，全面适配育儿全阶段需求",
+          "提升用户使用体验，实现AI技术与育儿场景的深度融合"
+        ]
+      },
+      {
+        "title": "跨境电商自动化创业项目",
+        "date": "2025.09 - 2026.01",
+        "description": [
+          "独立负责跨境电商全流程运营（选品、供应链、推广等）",
+          "搭建AI自动化脚本优化核心业务流程，有效提升单店运营效率60%",
+          "降低人力成本80%，实现业务稳定盈利"
+        ]
+      }
+    ],
+    "summary": "拥有3年跨境运营主管实战经验，兼具扎实的业务认知与AI技术落地能力，擅长从业务痛点出发，运用AI工具打造高价值产品，可独立完成AI产品从0到1的落地与迭代，快速适配目标岗位，为团队创造核心价值。"
+  }
 }

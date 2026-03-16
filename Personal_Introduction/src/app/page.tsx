@@ -501,11 +501,8 @@ const PDFGenerator = ({ data, toggleEditMode, isEditMode }: { data: WebsiteData;
           <header style="display: flex; align-items: center; padding-bottom: 20px; border-bottom: 2px solid #007bff;">
             <!-- 左侧照片区域 -->
             <div style="width: 120px; height: 160px; margin-right: 30px; border: 2px solid #007bff; border-radius: 8px; overflow: hidden; background-color: #f0f0f0; flex-shrink: 0;">
-              <!-- 照片占位符 -->
-              <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #999;">
-                <div style="font-size: 40px; margin-bottom: 5px;">📷</div>
-                <div>照片占位</div>
-              </div>
+              <!-- 实际照片 -->
+              <img src="${data.profilePhoto}" alt="个人照片" style="width: 100%; height: 100%; object-cover;" />
             </div>
             
             <!-- 右侧个人信息区域 -->
@@ -1297,6 +1294,157 @@ export default function Home() {
     localStorage.setItem('websiteData', JSON.stringify(updatedData));
   };
 
+  // 处理简历基本信息更新
+  const handleResumeBasicInfoChange = (field: 'name' | 'phone' | 'email' | 'location' | 'position', value: string) => {
+    const updatedData = { ...data, resume: { ...data.resume, [field]: value } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理简历照片更新
+  const handleProfilePhotoChange = (value: string) => {
+    const updatedData = { ...data, profilePhoto: value };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理简历标签更新
+  const handleResumeTagsChange = (tags: string[]) => {
+    const updatedData = { ...data, resume: { ...data.resume, tags } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理简历核心优势更新
+  const handleCoreStrengthsChange = (index: number, value: string) => {
+    const updatedCoreStrengths = [...data.resume.coreStrengths];
+    updatedCoreStrengths[index] = value;
+    const updatedData = { ...data, resume: { ...data.resume, coreStrengths: updatedCoreStrengths } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 添加新的核心优势
+  const addCoreStrength = () => {
+    const updatedCoreStrengths = [...data.resume.coreStrengths, '新的核心优势'];
+    const updatedData = { ...data, resume: { ...data.resume, coreStrengths: updatedCoreStrengths } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 删除核心优势
+  const deleteCoreStrength = (index: number) => {
+    if (data.resume.coreStrengths.length <= 1) return;
+    const updatedCoreStrengths = data.resume.coreStrengths.filter((_, i) => i !== index);
+    const updatedData = { ...data, resume: { ...data.resume, coreStrengths: updatedCoreStrengths } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理工作经历更新
+  const handleExperienceChange = (index: number, field: 'title' | 'date' | 'company' | 'description', value: string | string[]) => {
+    const updatedExperiences = [...data.resume.experiences];
+    updatedExperiences[index] = { ...updatedExperiences[index], [field]: value };
+    const updatedData = { ...data, resume: { ...data.resume, experiences: updatedExperiences } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 添加新的工作经历
+  const addExperience = () => {
+    const newExperience = {
+      title: '新的职位',
+      date: '2024年1月 - 至今',
+      company: '新公司',
+      description: ['新的工作内容']
+    };
+    const updatedExperiences = [...data.resume.experiences, newExperience];
+    const updatedData = { ...data, resume: { ...data.resume, experiences: updatedExperiences } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 删除工作经历
+  const deleteExperience = (index: number) => {
+    if (data.resume.experiences.length <= 1) return;
+    const updatedExperiences = data.resume.experiences.filter((_, i) => i !== index);
+    const updatedData = { ...data, resume: { ...data.resume, experiences: updatedExperiences } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理教育背景更新
+  const handleEducationChange = (field: 'title' | 'date' | 'school' | 'description', value: string) => {
+    const updatedData = { ...data, resume: { ...data.resume, education: { ...data.resume.education, [field]: value } } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理技能更新
+  const handleResumeSkillChange = (index: number, value: string) => {
+    const updatedSkills = [...data.resume.skills];
+    updatedSkills[index] = { ...updatedSkills[index], name: value };
+    const updatedData = { ...data, resume: { ...data.resume, skills: updatedSkills } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 添加新的技能
+  const addResumeSkill = () => {
+    const newSkill = { name: '新技能' };
+    const updatedSkills = [...data.resume.skills, newSkill];
+    const updatedData = { ...data, resume: { ...data.resume, skills: updatedSkills } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 删除技能
+  const deleteResumeSkill = (index: number) => {
+    if (data.resume.skills.length <= 1) return;
+    const updatedSkills = data.resume.skills.filter((_, i) => i !== index);
+    const updatedData = { ...data, resume: { ...data.resume, skills: updatedSkills } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理项目经历更新
+  const handleResumeProjectChange = (index: number, field: 'title' | 'date' | 'description', value: string | string[]) => {
+    const updatedProjects = [...data.resume.projects];
+    updatedProjects[index] = { ...updatedProjects[index], [field]: value };
+    const updatedData = { ...data, resume: { ...data.resume, projects: updatedProjects } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 添加新的项目经历
+  const addResumeProject = () => {
+    const newProject = {
+      title: '新项目',
+      date: '2024年1月 - 2024年3月',
+      description: ['项目内容']
+    };
+    const updatedProjects = [...data.resume.projects, newProject];
+    const updatedData = { ...data, resume: { ...data.resume, projects: updatedProjects } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 删除项目经历
+  const deleteResumeProject = (index: number) => {
+    if (data.resume.projects.length <= 1) return;
+    const updatedProjects = data.resume.projects.filter((_, i) => i !== index);
+    const updatedData = { ...data, resume: { ...data.resume, projects: updatedProjects } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
+  // 处理个人总结更新
+  const handleSummaryChange = (value: string) => {
+    const updatedData = { ...data, resume: { ...data.resume, summary: value } };
+    setData(updatedData);
+    localStorage.setItem('websiteData', JSON.stringify(updatedData));
+  };
+
   return (
     <div className="min-h-screen">
       <CursorFollower />
@@ -1715,6 +1863,413 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 简历部分 */}
+      <section className="py-20 container mx-auto px-4">
+        <h2 className="section-title mb-12">
+          <span className="text-white">我的</span> 
+          <span className="glow-text">简历</span>
+        </h2>
+
+        {/* 简历基本信息 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-1/3">
+              <h3 className="text-xl font-bold mb-4 text-primary">个人信息</h3>
+              
+              {/* 简历照片 */}
+              <div className="mb-6">
+                <label className="block text-sm text-muted mb-2">简历照片</label>
+                <div className="w-32 h-32 bg-primary/10 rounded-lg overflow-hidden mb-3 mx-auto">
+                  <img src={data.profilePhoto} alt="个人照片" className="w-full h-full object-cover" />
+                </div>
+                {isEditMode && (
+                  <>
+                    <EditableText 
+                      value={data.profilePhoto} 
+                      onChange={handleProfilePhotoChange} 
+                      className="w-full text-sm mb-3" 
+                      isEditMode={isEditMode}
+                      placeholder="输入照片URL"
+                    />
+                    
+                    {/* 本地文件上传 */}
+                    <div className="mt-4">
+                      <label className="block text-sm text-muted mb-2">或选择本地照片</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const dataURL = event.target?.result as string;
+                              handleProfilePhotoChange(dataURL);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-muted mb-1">姓名</label>
+                  <EditableText 
+                    value={data.resume.name} 
+                    onChange={(value) => handleResumeBasicInfoChange('name', value)} 
+                    className="text-lg font-semibold" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">职位</label>
+                  <EditableText 
+                    value={data.resume.position} 
+                    onChange={(value) => handleResumeBasicInfoChange('position', value)} 
+                    className="text-lg font-semibold" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">电话</label>
+                  <EditableText 
+                    value={data.resume.phone} 
+                    onChange={(value) => handleResumeBasicInfoChange('phone', value)} 
+                    className="text-muted" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">邮箱</label>
+                  <EditableText 
+                    value={data.resume.email} 
+                    onChange={(value) => handleResumeBasicInfoChange('email', value)} 
+                    className="text-muted" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">地点</label>
+                  <EditableText 
+                    value={data.resume.location} 
+                    onChange={(value) => handleResumeBasicInfoChange('location', value)} 
+                    className="text-muted" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="md:w-2/3">
+              <h3 className="text-xl font-bold mb-4 text-primary">个人标签</h3>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {data.resume.tags.map((tag, index) => (
+                  <div key={index} className="relative">
+                    <EditableText 
+                      value={tag} 
+                      onChange={(value) => {
+                        const updatedTags = [...data.resume.tags];
+                        updatedTags[index] = value;
+                        handleResumeTagsChange(updatedTags);
+                      }} 
+                      className="bg-primary/20 text-primary px-4 py-2 rounded-full" 
+                      isEditMode={isEditMode}
+                    />
+                    {isEditMode && (
+                      <button 
+                        onClick={() => {
+                          if (data.resume.tags.length <= 1) return;
+                          const updatedTags = data.resume.tags.filter((_, i) => i !== index);
+                          handleResumeTagsChange(updatedTags);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {isEditMode && (
+                  <button 
+                    onClick={() => handleResumeTagsChange([...data.resume.tags, '新标签'])} 
+                    className="bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/50 hover:bg-primary/20"
+                  >
+                    + 添加标签
+                  </button>
+                )}
+              </div>
+              
+              <h3 className="text-xl font-bold mb-4 text-primary">个人总结</h3>
+              <EditableText 
+                value={data.resume.summary} 
+                onChange={handleSummaryChange} 
+                className="text-muted whitespace-pre-line" 
+                isEditMode={isEditMode}
+                placeholder="编辑个人总结..."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 核心优势 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <h3 className="text-xl font-bold mb-6 text-primary">核心优势</h3>
+          <div className="space-y-3">
+            <ul className="space-y-3">
+              {data.resume.coreStrengths.map((strength, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <span className="text-primary mt-1">🌟</span>
+                  <div className="flex-1 relative">
+                    <EditableText 
+                      value={strength} 
+                      onChange={(value) => handleCoreStrengthsChange(index, value)} 
+                      className="text-muted" 
+                      isEditMode={isEditMode}
+                    />
+                    {isEditMode && (
+                      <button 
+                        onClick={() => deleteCoreStrength(index)}
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {isEditMode && (
+              <button 
+                onClick={addCoreStrength} 
+                className="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/50 hover:bg-primary/20"
+              >
+                + 添加核心优势
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 工作经历 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <h3 className="text-xl font-bold mb-6 text-primary">工作经历</h3>
+          <div className="space-y-6">
+            {data.resume.experiences.map((experience, index) => (
+              <div key={index} className="relative border-l-2 border-primary/30 pl-6 py-2">
+                {isEditMode && (
+                  <button 
+                    onClick={() => deleteExperience(index)}
+                    className="absolute top-0 -left-12 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                )}
+                <div className="flex flex-col md:flex-row md:justify-between gap-2 mb-2">
+                  <EditableText 
+                    value={experience.title} 
+                    onChange={(value) => handleExperienceChange(index, 'title', value)} 
+                    className="text-lg font-semibold" 
+                    isEditMode={isEditMode}
+                  />
+                  <EditableText 
+                    value={experience.date} 
+                    onChange={(value) => handleExperienceChange(index, 'date', value)} 
+                    className="text-muted" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <EditableText 
+                  value={experience.company} 
+                  onChange={(value) => handleExperienceChange(index, 'company', value)} 
+                  className="text-primary font-medium mb-3" 
+                  isEditMode={isEditMode}
+                />
+                <ul className="space-y-2">
+                  {experience.description.map((desc, descIndex) => (
+                    <li key={descIndex} className="flex items-start gap-3">
+                      <span className="text-primary mt-1">•</span>
+                      <EditableText 
+                        value={desc} 
+                        onChange={(value) => {
+                          const updatedDescription = [...experience.description];
+                          updatedDescription[descIndex] = value;
+                          handleExperienceChange(index, 'description', updatedDescription);
+                        }} 
+                        className="text-muted" 
+                        isEditMode={isEditMode}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {isEditMode && (
+                  <button 
+                    onClick={() => {
+                      const updatedDescription = [...experience.description, '新的工作内容'];
+                      handleExperienceChange(index, 'description', updatedDescription);
+                    }} 
+                    className="mt-3 text-sm text-primary hover:text-primary/80"
+                  >
+                    + 添加工作内容
+                  </button>
+                )}
+              </div>
+            ))}
+            {isEditMode && (
+              <button 
+                onClick={addExperience} 
+                className="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/50 hover:bg-primary/20"
+              >
+                + 添加工作经历
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 教育背景 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <h3 className="text-xl font-bold mb-6 text-primary">教育背景</h3>
+          <div className="relative border-l-2 border-primary/30 pl-6 py-2">
+            <div className="flex flex-col md:flex-row md:justify-between gap-2 mb-2">
+              <EditableText 
+                value={data.resume.education.title} 
+                onChange={(value) => handleEducationChange('title', value)} 
+                className="text-lg font-semibold" 
+                isEditMode={isEditMode}
+              />
+              <EditableText 
+                value={data.resume.education.date} 
+                onChange={(value) => handleEducationChange('date', value)} 
+                className="text-muted" 
+                isEditMode={isEditMode}
+              />
+            </div>
+            <EditableText 
+              value={data.resume.education.school} 
+              onChange={(value) => handleEducationChange('school', value)} 
+              className="text-primary font-medium mb-3" 
+              isEditMode={isEditMode}
+            />
+            <EditableText 
+              value={data.resume.education.description} 
+              onChange={(value) => handleEducationChange('description', value)} 
+              className="text-muted" 
+              isEditMode={isEditMode}
+              placeholder="编辑教育背景描述..."
+            />
+          </div>
+        </div>
+
+        {/* 技能清单 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <h3 className="text-xl font-bold mb-6 text-primary">技能清单</h3>
+          <div className="flex flex-wrap gap-3">
+            {data.resume.skills.map((skill, index) => (
+              <div key={index} className="relative">
+                <EditableText 
+                  value={skill.name} 
+                  onChange={(value) => handleResumeSkillChange(index, value)} 
+                  className="bg-primary/20 text-primary px-4 py-2 rounded-full" 
+                  isEditMode={isEditMode}
+                />
+                {isEditMode && (
+                  <button 
+                    onClick={() => deleteResumeSkill(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            {isEditMode && (
+              <button 
+                onClick={addResumeSkill} 
+                className="bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/50 hover:bg-primary/20"
+              >
+                + 添加技能
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 项目经历 */}
+        <div className="bg-surface rounded-xl p-8 mb-12 shadow-lg border border-primary/20">
+          <h3 className="text-xl font-bold mb-6 text-primary">项目经历</h3>
+          <div className="space-y-6">
+            {data.resume.projects.map((project, index) => (
+              <div key={index} className="relative border-l-2 border-primary/30 pl-6 py-2">
+                {isEditMode && (
+                  <button 
+                    onClick={() => deleteResumeProject(index)}
+                    className="absolute top-0 -left-12 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                )}
+                <div className="flex flex-col md:flex-row md:justify-between gap-2 mb-2">
+                  <EditableText 
+                    value={project.title} 
+                    onChange={(value) => handleResumeProjectChange(index, 'title', value)} 
+                    className="text-lg font-semibold" 
+                    isEditMode={isEditMode}
+                  />
+                  <EditableText 
+                    value={project.date} 
+                    onChange={(value) => handleResumeProjectChange(index, 'date', value)} 
+                    className="text-muted" 
+                    isEditMode={isEditMode}
+                  />
+                </div>
+                <ul className="space-y-2">
+                  {project.description.map((desc, descIndex) => (
+                    <li key={descIndex} className="flex items-start gap-3">
+                      <span className="text-primary mt-1">•</span>
+                      <EditableText 
+                        value={desc} 
+                        onChange={(value) => {
+                          const updatedDescription = [...project.description];
+                          updatedDescription[descIndex] = value;
+                          handleResumeProjectChange(index, 'description', updatedDescription);
+                        }} 
+                        className="text-muted" 
+                        isEditMode={isEditMode}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {isEditMode && (
+                  <button 
+                    onClick={() => {
+                      const updatedDescription = [...project.description, '新的项目内容'];
+                      handleResumeProjectChange(index, 'description', updatedDescription);
+                    }} 
+                    className="mt-3 text-sm text-primary hover:text-primary/80"
+                  >
+                    + 添加项目内容
+                  </button>
+                )}
+              </div>
+            ))}
+            {isEditMode && (
+              <button 
+                onClick={addResumeProject} 
+                className="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/50 hover:bg-primary/20"
+              >
+                + 添加项目经历
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* PDF生成按钮 */}
+        <div className="text-center">
+          <PDFGenerator data={data} toggleEditMode={toggleEditMode} isEditMode={isEditMode} />
         </div>
       </section>
 
